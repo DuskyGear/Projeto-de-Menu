@@ -1,0 +1,369 @@
+import React, { useState, useEffect } from 'react';
+import { ShoppingCart, Trash2, Plus, Minus, MessageCircle, X, Check, MapPin, Utensils, Coffee } from 'lucide-react';
+
+// --- DADOS DOS PRODUTOS (Pode editar aqui) ---
+const MENU_ITEMS = [
+  {
+    id: 1,
+    category: 'pasteis',
+    name: 'Pastel de Carne',
+    description: 'Carne moída temperada, azeitona e ovo.',
+    price: 10.00,
+    image: 'https://images.unsplash.com/photo-1626127339796-7243958dc318?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 2,
+    category: 'pasteis',
+    name: 'Pastel de Queijo',
+    description: 'Muito queijo mussarela derretido.',
+    price: 9.50,
+    image: 'https://images.unsplash.com/photo-1541592106381-b31e96716236?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 3,
+    category: 'pasteis',
+    name: 'Frango com Catupiry',
+    description: 'Frango desfiado temperado com catupiry original.',
+    price: 12.00,
+    image: 'https://images.unsplash.com/photo-1606368361044-a95782782977?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 4,
+    category: 'pasteis',
+    name: 'Pastel Especial',
+    description: 'Carne, queijo, presunto, ovo, tomate e orégano.',
+    price: 15.00,
+    image: 'https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 5,
+    category: 'bebidas',
+    name: 'Coca-Cola Lata',
+    description: '350ml, bem gelada.',
+    price: 6.00,
+    image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 6,
+    category: 'bebidas',
+    name: 'Caldo de Cana',
+    description: '500ml, feito na hora com limão.',
+    price: 8.00,
+    image: 'https://images.unsplash.com/photo-1541336423985-5b8e987c26fb?auto=format&fit=crop&q=80&w=400'
+  }
+];
+
+// --- NÚMERO DO WHATSAPP DO DONO ---
+const PHONE_NUMBER = "5511999999999"; // Substitua pelo seu número real
+
+const App = () => {
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('pix');
+  const [observation, setObservation] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('todos');
+
+  // Adicionar ao carrinho
+  const addToCart = (product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+    setIsCartOpen(true);
+  };
+
+  // Remover/Diminuir do carrinho
+  const removeFromCart = (id) => {
+    setCart(prev => prev.reduce((acc, item) => {
+      if (item.id === id) {
+        if (item.quantity > 1) {
+          acc.push({ ...item, quantity: item.quantity - 1 });
+        }
+      } else {
+        acc.push(item);
+      }
+      return acc;
+    }, []));
+  };
+
+  // Remover item completamente
+  const deleteFromCart = (id) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  // Gerar Link do WhatsApp
+  const handleCheckout = () => {
+    if (cart.length === 0) return alert("Seu carrinho está vazio!");
+    if (!customerName.trim()) return alert("Por favor, digite seu nome.");
+
+    let message = `*NOVO PEDIDO - PASTELARIA SABOR & CROCANCIA*\n\n`;
+    message += `👤 *Cliente:* ${customerName}\n`;
+    message += `-----------------------------------\n`;
+    
+    cart.forEach(item => {
+      message += `• ${item.quantity}x ${item.name}\n`;
+      message += `  (R$ ${(item.price * item.quantity).toFixed(2)})\n`;
+    });
+    
+    message += `-----------------------------------\n`;
+    if (observation) {
+      message += `📝 *Obs:* ${observation}\n`;
+    }
+    message += `💳 *Pagamento:* ${paymentMethod.toUpperCase()}\n`;
+    message += `💰 *TOTAL: R$ ${cartTotal.toFixed(2)}*\n\n`;
+    message += `Aguardo a confirmação!`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${PHONE_NUMBER}?text=${encodedMessage}`;
+    
+    window.open(url, '_blank');
+  };
+
+  const filteredItems = categoryFilter === 'todos' 
+    ? MENU_ITEMS 
+    : MENU_ITEMS.filter(item => item.category === categoryFilter);
+
+  return (
+    <div className="min-h-screen bg-orange-50 font-sans text-gray-800 pb-20">
+      {/* Header Fixo */}
+      <header className="bg-red-600 text-white p-4 shadow-lg sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="bg-yellow-400 p-2 rounded-full text-red-700">
+              <Utensils size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold leading-tight">Pastelaria</h1>
+              <p className="text-xs text-red-200">Sabor & Crocância</p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative bg-white text-red-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ShoppingCart size={24} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-yellow-400 text-red-800 text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Hero / Banner */}
+      <div className="bg-red-700 text-white py-8 px-4 text-center rounded-b-3xl shadow-md mb-6">
+        <h2 className="text-2xl font-bold mb-2">Bateu a fome? 😋</h2>
+        <p className="opacity-90">Os melhores pastéis da região entregues quentinhos na sua casa!</p>
+      </div>
+
+      <main className="max-w-5xl mx-auto px-4">
+        {/* Filtros */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+          {['todos', 'pasteis', 'bebidas'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-4 py-2 rounded-full font-medium capitalize whitespace-nowrap transition-colors ${
+                categoryFilter === cat 
+                ? 'bg-red-600 text-white shadow-md' 
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {cat === 'todos' ? 'Todos' : cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Lista de Produtos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredItems.map((item) => (
+            <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-gray-100 flex flex-col">
+              <div className="h-48 overflow-hidden relative">
+                <img 
+                  src={item.image} 
+                  alt={item.name} 
+                  className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md">
+                  {item.category === 'pasteis' ? 'Pastel' : 'Bebida'}
+                </span>
+              </div>
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-800">{item.name}</h3>
+                  <p className="text-gray-500 text-sm mt-1 mb-3 line-clamp-2">{item.description}</p>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-green-600 font-bold text-lg">
+                    R$ {item.price.toFixed(2).replace('.', ',')}
+                  </span>
+                  <button 
+                    onClick={() => addToCart(item)}
+                    className="bg-red-100 text-red-700 px-3 py-2 rounded-lg font-medium hover:bg-red-200 transition-colors flex items-center gap-1 active:scale-95"
+                  >
+                    Adicionar <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Modal do Carrinho (Sidebar) */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop Escuro */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsCartOpen(false)}
+          />
+          
+          {/* Conteúdo do Carrinho */}
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            
+            {/* Cabeçalho do Carrinho */}
+            <div className="bg-red-600 text-white p-4 flex justify-between items-center shadow-md">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <ShoppingCart size={20} /> Seu Pedido
+              </h2>
+              <button onClick={() => setIsCartOpen(false)} className="hover:bg-red-700 p-1 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Lista de Itens */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+              {cart.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 opacity-70">
+                  <ShoppingCart size={64} className="mb-4" />
+                  <p>Seu carrinho está vazio.</p>
+                  <button 
+                    onClick={() => setIsCartOpen(false)}
+                    className="mt-4 text-red-600 font-bold hover:underline"
+                  >
+                    Voltar para o cardápio
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {cart.map(item => (
+                    <div key={item.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex gap-3">
+                      <div className="w-16 h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-gray-800 text-sm">{item.name}</h4>
+                        <div className="text-green-600 font-bold text-sm">
+                          R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end justify-between">
+                         <button onClick={() => deleteFromCart(item.id)} className="text-gray-400 hover:text-red-500">
+                           <Trash2 size={16} />
+                         </button>
+                         <div className="flex items-center bg-gray-100 rounded-lg">
+                           <button 
+                             onClick={() => removeFromCart(item.id)}
+                             className="p-1 px-2 text-red-600 hover:bg-gray-200 rounded-l-lg"
+                           >
+                             <Minus size={14} />
+                           </button>
+                           <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
+                           <button 
+                             onClick={() => addToCart(item)}
+                             className="p-1 px-2 text-green-600 hover:bg-gray-200 rounded-r-lg"
+                           >
+                             <Plus size={14} />
+                           </button>
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer do Carrinho (Checkout) */}
+            {cart.length > 0 && (
+              <div className="bg-white p-4 border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div className="space-y-3 mb-4">
+                  
+                  {/* Nome */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Seu Nome</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: João da Silva"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+
+                  {/* Observações */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Observações</label>
+                    <textarea 
+                      placeholder="Ex: Sem cebola, capricha no molho..."
+                      value={observation}
+                      onChange={(e) => setObservation(e.target.value)}
+                      rows="2"
+                      className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm resize-none"
+                    />
+                  </div>
+
+                  {/* Pagamento */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Pagamento</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['pix', 'dinheiro', 'cartao'].map((method) => (
+                        <button
+                          key={method}
+                          onClick={() => setPaymentMethod(method)}
+                          className={`py-2 text-xs font-bold rounded-lg capitalize border ${
+                            paymentMethod === method
+                              ? 'bg-red-50 border-red-500 text-red-700'
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {method === 'cartao' ? 'Cartão' : method}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mb-4 text-lg font-bold">
+                  <span>Total</span>
+                  <span className="text-green-600">R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
+                </div>
+
+                <button 
+                  onClick={handleCheckout}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+                >
+                  <MessageCircle size={20} />
+                  Enviar Pedido no WhatsApp
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
