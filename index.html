@@ -7,6 +7,9 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Babel para traduzir JSX no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- Configuração para permitir React via navegador -->
     <script type="importmap">
@@ -33,7 +36,8 @@
 <body>
     <div id="root"></div>
 
-    <script type="module">
+    <!-- Adicionado type="text/babel" e data-type="module" para funcionar sem build -->
+    <script type="text/babel" data-type="module">
         import React, { useState, useEffect } from 'react';
         import ReactDOM from 'react-dom/client';
         import { ShoppingCart, Trash2, Plus, Minus, MessageCircle, X, Check, MapPin, Utensils, Coffee } from 'lucide-react';
